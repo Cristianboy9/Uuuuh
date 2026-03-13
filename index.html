@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Roblox Audio Prepper (2.5x)</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #1a1a1a; color: white; }
+        .box { background: #2a2a2a; padding: 30px; border-radius: 15px; text-align: center; border: 2px solid #00aff0; }
+        button { background: #00aff0; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; display: none; }
+        input { margin-top: 20px; }
+        #status { margin: 15px 0; color: #00ff88; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h1>Preparador para Roblox</h1>
+    <p>Sube tu audio normal y lo aceleraremos a <b>2.5x</b></p>
+    
+    <input type="file" id="upload" accept="audio/*">
+    <div id="status"></div>
+    
+    <button id="downloadBtn">DESCARGAR PARA ROBLOX</button>
+</div>
+
+<script>
+    const upload = document.getElementById('upload');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const status = document.getElementById('status');
+    let audioBuffer;
+
+    upload.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        status.innerText = "Procesando...";
+        const arrayBuffer = await file.arrayBuffer();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+        status.innerText = "Audio listo para acelerar.";
+        downloadBtn.style.display = "block";
+    };
+
+    downloadBtn.onclick = () => {
+        // Creamos un contexto "offline" para renderizar el audio acelerado
+        const offlineCtx = new OfflineAudioContext(
+            audioBuffer.numberOfChannels,
+            audioBuffer.length / 2.5, // Duración reducida a 2.5x menos
+            audioBuffer.sampleRate
+        );
+
+        const source = offlineCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        
+        // ESTA ES LA CLAVE: Lo aceleramos 2.5 veces. 
+        // Esto sube el tono y la velocidad.
+        source.playbackRate.value = 2.5; 
+
+        source.connect(offlineCtx.destination);
+        source.start();
+
+        offlineCtx.startRendering().then(renderedBuffer => {
+            const wavBlob = bufferToWave(renderedBuffer, renderedBuffer.length);
+            const url = URL.createObjectURL(wavBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "audio_para_roblox_2.5x.wav";
+            a.click();
+            status.innerText = "¡Descargado! Ahora súbelo a Roblox y pon Pitch 0.4";
+        });
+    };
+
+    // Función para convertir a archivo .wav real
+    function bufferToWave(abuffer, len) {
+        let numOfChan = abuffer.numberOfChannels,
+            length = len * numOfChan * 2 + 44,
+            buffer = new ArrayBuffer(length),
+            view = new DataView(buffer),
+            pos = 0;
+
+        function setUint16(d) { view.setUint16(pos, d, true); pos += 2; }
+        function setUint32(d) { view.setUint32(pos, d, true); pos += 4; }
+
+        setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
+        setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
+        setUint32(abuffer.sampleRate); setUint32(abuffer.sampleRate * 2 * numOfChan);
+        setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164); setUint32(length - pos - 4);
+
+        for (let i = 0; i < len; i++) {
+            for (let channel = 0; channel < numOfChan; channel++) {
+                let s = Math.max(-1, Math.min(1, abuffer.getChannelData(channel)[i]));
+                view.setInt16(pos, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                pos += 2;
+            }
+        }
+        return new Blob([buffer], { type: "audio/wav" });
+    }
+</script>
+</body>
+</html>
