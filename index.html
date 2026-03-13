@@ -2,25 +2,28 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Roblox Audio Prepper (2.5x)</title>
+    <title>Roblox Audio Booster (2.5x + Volumen)</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #1a1a1a; color: white; }
-        .box { background: #2a2a2a; padding: 30px; border-radius: 15px; text-align: center; border: 2px solid #00aff0; }
-        button { background: #00aff0; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; display: none; }
-        input { margin-top: 20px; }
-        #status { margin: 15px 0; color: #00ff88; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #0a0a0a; color: white; margin: 0; }
+        .box { background: #1a1a1a; padding: 40px; border-radius: 20px; text-align: center; border: 2px solid #ff4500; box-shadow: 0 0 20px rgba(255, 69, 0, 0.3); width: 350px; }
+        h1 { color: #ff4500; font-size: 1.5rem; margin-bottom: 10px; }
+        p { color: #888; font-size: 0.9rem; }
+        input { margin-top: 20px; width: 100%; }
+        button { background: #ff4500; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 20px; width: 100%; display: none; transition: 0.3s; }
+        button:hover { background: #ff6347; transform: scale(1.02); }
+        #status { margin-top: 15px; color: #00ff88; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h1>Preparador para Roblox</h1>
-    <p>Sube tu audio normal y lo aceleraremos a <b>2.5x</b></p>
+    <h1>Roblox Booster 2.5x</h1>
+    <p>Aumenta volumen y acelera para usar en <b>Pitch 0.4</b></p>
     
     <input type="file" id="upload" accept="audio/*">
     <div id="status"></div>
     
-    <button id="downloadBtn">DESCARGAR PARA ROBLOX</button>
+    <button id="downloadBtn">DESCARGAR AUDIO POTENCIADO</button>
 </div>
 
 <script>
@@ -33,60 +36,57 @@
         const file = e.target.files[0];
         if (!file) return;
 
-        status.innerText = "Procesando...";
+        status.innerText = "Cargando audio...";
         const arrayBuffer = await file.arrayBuffer();
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
-        status.innerText = "Audio listo para acelerar.";
+        status.innerText = "¡Audio listo para potenciar!";
         downloadBtn.style.display = "block";
     };
 
     downloadBtn.onclick = () => {
-        // Creamos un contexto "offline" para renderizar el audio acelerado
+        // Renderizamos a 2.5x de velocidad (más corto)
         const offlineCtx = new OfflineAudioContext(
             audioBuffer.numberOfChannels,
-            audioBuffer.length / 2.5, // Duración reducida a 2.5x menos
+            audioBuffer.length / 2.5,
             audioBuffer.sampleRate
         );
 
         const source = offlineCtx.createBufferSource();
         source.buffer = audioBuffer;
-        
-        // ESTA ES LA CLAVE: Lo aceleramos 2.5 veces. 
-        // Esto sube el tono y la velocidad.
-        source.playbackRate.value = 2.5; 
+        source.playbackRate.value = 2.5; // Aceleración
 
-        source.connect(offlineCtx.destination);
+        // --- NODO DE VOLUMEN (GAIN) ---
+        const gainNode = offlineCtx.createGain();
+        gainNode.gain.value = 2.5; // <--- AQUÍ SUBES EL VOLUMEN (2.5 es bastante alto)
+        
+        source.connect(gainNode);
+        gainNode.connect(offlineCtx.destination);
+        // ------------------------------
+
         source.start();
+        status.innerText = "Procesando volumen y velocidad...";
 
         offlineCtx.startRendering().then(renderedBuffer => {
             const wavBlob = bufferToWave(renderedBuffer, renderedBuffer.length);
             const url = URL.createObjectURL(wavBlob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = "audio_para_roblox_2.5x.wav";
+            a.download = "audio_BOOST_2.5x.wav";
             a.click();
-            status.innerText = "¡Descargado! Ahora súbelo a Roblox y pon Pitch 0.4";
+            status.innerText = "¡Descargado! Súbelo y usa Pitch 0.4";
         });
     };
 
-    // Función para convertir a archivo .wav real
     function bufferToWave(abuffer, len) {
-        let numOfChan = abuffer.numberOfChannels,
-            length = len * numOfChan * 2 + 44,
-            buffer = new ArrayBuffer(length),
-            view = new DataView(buffer),
-            pos = 0;
-
+        let numOfChan = abuffer.numberOfChannels, length = len * numOfChan * 2 + 44, buffer = new ArrayBuffer(length), view = new DataView(buffer), pos = 0;
         function setUint16(d) { view.setUint16(pos, d, true); pos += 2; }
         function setUint32(d) { view.setUint32(pos, d, true); pos += 4; }
-
         setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
         setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
         setUint32(abuffer.sampleRate); setUint32(abuffer.sampleRate * 2 * numOfChan);
         setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164); setUint32(length - pos - 4);
-
         for (let i = 0; i < len; i++) {
             for (let channel = 0; channel < numOfChan; channel++) {
                 let s = Math.max(-1, Math.min(1, abuffer.getChannelData(channel)[i]));
