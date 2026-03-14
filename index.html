@@ -1,101 +1,629 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Roblox Audio Booster (2.5x + Volumen)</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #0a0a0a; color: white; margin: 0; }
-        .box { background: #1a1a1a; padding: 40px; border-radius: 20px; text-align: center; border: 2px solid #ff4500; box-shadow: 0 0 20px rgba(255, 69, 0, 0.3); width: 350px; }
-        h1 { color: #ff4500; font-size: 1.5rem; margin-bottom: 10px; }
-        p { color: #888; font-size: 0.9rem; }
-        input { margin-top: 20px; width: 100%; }
-        button { background: #ff4500; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 20px; width: 100%; display: none; transition: 0.3s; }
-        button:hover { background: #ff6347; transform: scale(1.02); }
-        #status { margin-top: 15px; color: #00ff88; font-weight: bold; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Bypass4Me</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      color: #cc0000;
+      font-family: 'Share Tech Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Animated grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(180,0,0,0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(180,0,0,0.07) 1px, transparent 1px);
+      background-size: 32px 32px;
+      animation: gridShift 20s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes gridShift {
+      0% { background-position: 0 0; }
+      100% { background-position: 32px 32px; }
+    }
+
+    /* Scanlines */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 3px,
+        rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .container {
+      position: relative;
+      z-index: 5;
+      width: 440px;
+      animation: fadeIn 0.6s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Corner decorations */
+    .corners {
+      position: absolute;
+      inset: -10px;
+      pointer-events: none;
+    }
+    .corners::before, .corners::after,
+    .corner-b::before, .corner-b::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      border-color: #cc0000;
+      border-style: solid;
+      opacity: 0.5;
+    }
+    .corners::before { top: 0; left: 0; border-width: 2px 0 0 2px; }
+    .corners::after  { top: 0; right: 0; border-width: 2px 2px 0 0; }
+    .corner-b::before { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+    .corner-b::after  { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+
+    .card {
+      background: #000;
+      border: 1px solid #330000;
+      padding: 32px 28px 28px;
+      position: relative;
+    }
+
+    /* Top accent line */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #cc0000, #ff0000, #cc0000, transparent);
+      animation: pulse 3s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    /* Language bar */
+    .lang-bar {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      margin-bottom: 22px;
+    }
+    .lang-btn {
+      background: none;
+      border: 1px solid #330000;
+      color: #660000;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      padding: 3px 9px;
+      cursor: pointer;
+      transition: 0.2s;
+      text-transform: uppercase;
+    }
+    .lang-btn:hover { border-color: #880000; color: #cc0000; }
+    .lang-btn.active {
+      border-color: #cc0000;
+      color: #ff0000;
+      background: rgba(200,0,0,0.08);
+      text-shadow: 0 0 8px rgba(255,0,0,0.5);
+    }
+
+    /* Title */
+    .title-block { margin-bottom: 18px; }
+    .pre-label {
+      font-size: 0.65rem;
+      letter-spacing: 5px;
+      color: #550000;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3.4rem;
+      letter-spacing: 5px;
+      color: #cc0000;
+      line-height: 1;
+      text-shadow: 0 0 20px rgba(200,0,0,0.5), 0 0 50px rgba(200,0,0,0.2);
+    }
+    .subtitle {
+      font-size: 0.75rem;
+      color: #660000;
+      margin-top: 8px;
+      letter-spacing: 0.5px;
+      line-height: 1.6;
+    }
+
+    .sep {
+      border: none;
+      border-top: 1px solid #1a0000;
+      margin: 18px 0;
+    }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 1px dashed #440000;
+      padding: 22px 16px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: 0.3s;
+      background: rgba(100,0,0,0.04);
+    }
+    .upload-zone:hover { border-color: #880000; background: rgba(150,0,0,0.08); }
+    .upload-zone.ready { border-color: #cc0000; background: rgba(200,0,0,0.06); }
+    .upload-zone input {
+      position: absolute; inset: 0; opacity: 0;
+      cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-icon { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+    .upload-text {
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #660000;
+    }
+    .upload-zone.ready .upload-text { color: #cc0000; }
+
+    /* Loud mode selector */
+    .loud-section { margin: 14px 0; }
+    .loud-section-label {
+      font-size: 0.62rem;
+      letter-spacing: 3px;
+      color: #440000;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .mode-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+    }
+    .mode-btn {
+      background: #050000;
+      border: 1px solid #1a0000;
+      color: #550000;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 10px 6px 8px;
+      cursor: pointer;
+      transition: 0.2s;
+      text-align: center;
+      position: relative;
+    }
+    .mode-btn:hover { border-color: #550000; color: #880000; }
+    .mode-btn .mode-icon { font-size: 1.1rem; display: block; margin-bottom: 4px; }
+    .mode-btn .mode-name { display: block; font-weight: bold; }
+    .mode-btn .mode-desc { display: block; font-size: 0.58rem; color: #330000; margin-top: 3px; letter-spacing: 0.5px; }
+
+    .mode-btn.active-normal {
+      border-color: #660000;
+      color: #cc0000;
+      background: rgba(100,0,0,0.07);
+    }
+    .mode-btn.active-medio {
+      border-color: #aa0000;
+      color: #ff4400;
+      background: rgba(160,0,0,0.1);
+      box-shadow: 0 0 12px rgba(200,0,0,0.15);
+    }
+    .mode-btn.active-super {
+      border-color: #ff0000;
+      color: #ff2200;
+      background: rgba(200,0,0,0.12);
+      box-shadow: 0 0 20px rgba(255,0,0,0.25);
+      animation: superGlow 1.5s ease-in-out infinite;
+    }
+    @keyframes superGlow {
+      0%, 100% { box-shadow: 0 0 12px rgba(255,0,0,0.2); }
+      50% { box-shadow: 0 0 24px rgba(255,0,0,0.45); }
+    }
+    .mode-btn.active-super .mode-desc { color: #880000; }
+
+    /* Loud on/off toggle row */
+    .loud-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border: 1px solid #1a0000;
+      background: #050000;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: 0.25s;
+    }
+    .loud-row:hover { border-color: #440000; }
+    .loud-row.on { border-color: #770000; background: rgba(120,0,0,0.07); }
+    .loud-texts {}
+    .loud-name {
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #cc0000;
+      font-weight: bold;
+    }
+    .loud-hint {
+      font-size: 0.65rem;
+      color: #440000;
+      margin-top: 3px;
+      letter-spacing: 0.5px;
+    }
+    .switch {
+      width: 40px; height: 20px;
+      background: #1a0000;
+      border-radius: 10px;
+      position: relative;
+      transition: 0.3s;
+      flex-shrink: 0;
+    }
+    .switch::after {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      background: #550000;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: 0.3s;
+    }
+    .loud-row.on .switch { background: #880000; }
+    .loud-row.on .switch::after { left: 23px; background: #ff2200; box-shadow: 0 0 8px rgba(255,30,0,0.7); }
+
+    /* Mode grid — hidden when loud is OFF */
+    .loud-section { margin: 0 0 14px; }
+    .loud-section.hidden { display: none; }
+
+    /* Status */
+    #status {
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #880000;
+      text-align: center;
+      min-height: 16px;
+      margin: 6px 0;
+    }
+    #status.ok { color: #cc0000; text-shadow: 0 0 10px rgba(200,0,0,0.4); }
+
+    /* Download button */
+    #downloadBtn {
+      display: none;
+      width: 100%;
+      padding: 13px;
+      background: #cc0000;
+      color: #000;
+      border: none;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 5px;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-top: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    #downloadBtn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%);
+      transform: translateX(-100%);
+      transition: 0.5s;
+    }
+    #downloadBtn:hover { background: #ff0000; color: #000; }
+    #downloadBtn:hover::after { transform: translateX(100%); }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.6rem;
+      letter-spacing: 3px;
+      color: #2a0000;
+      text-transform: uppercase;
+    }
+  </style>
 </head>
 <body>
 
-<div class="box">
-    <h1>Roblox Booster 2.5x</h1>
-    <p>Aumenta volumen y acelera para usar en <b>Pitch 0.4</b></p>
-    
-    <input type="file" id="upload" accept="audio/*">
+<div class="container">
+  <div class="corners"></div>
+  <div class="corners corner-b"></div>
+  <div class="card">
+    <!-- Lang bar -->
+    <div class="lang-bar">
+      <button class="lang-btn" onclick="setLang('es')">ES</button>
+      <button class="lang-btn" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" onclick="setLang('ru')">RU</button>
+    </div>
+
+    <!-- Title -->
+    <div class="title-block">
+      <div class="pre-label" id="lbl-pre">AUDIO BOOSTER</div>
+      <h1>BYPASS<span style="color:#660000">4</span>ME</h1>
+      <p class="subtitle" id="lbl-sub">Acelera 2.5x y amplifica el volumen. Usa <b style="color:#cc0000">Pitch 0.4</b> en Roblox.</p>
+    </div>
+
+    <hr class="sep">
+
+    <!-- Upload -->
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="upload" accept="audio/*">
+      <span class="upload-icon">🔊</span>
+      <div class="upload-text" id="lbl-upload">SELECCIONAR AUDIO</div>
+    </div>
+
+    <!-- Loud ON/OFF toggle -->
+    <div class="loud-row" id="loudRow" onclick="toggleLoud()">
+      <div class="loud-texts">
+        <div class="loud-name" id="lbl-loud">⚡ MODO LOUD</div>
+        <div class="loud-hint" id="lbl-loud-hint">Activar compresión y ganancia extra</div>
+      </div>
+      <div class="switch" id="swi"></div>
+    </div>
+
+    <!-- Loud mode selector (visible solo si loud ON) -->
+    <div class="loud-section hidden" id="modeSection">
+      <div class="loud-section-label" id="lbl-mode-label">MODO DE VOLUMEN</div>
+      <div class="mode-grid">
+        <button class="mode-btn active-normal" id="btn-normal" onclick="setMode('normal')">
+          <span class="mode-icon">🔈</span>
+          <span class="mode-name" id="lbl-m-normal">NORMAL</span>
+          <span class="mode-desc" id="lbl-m-normal-d">×6 + compresión</span>
+        </button>
+        <button class="mode-btn" id="btn-medio" onclick="setMode('medio')">
+          <span class="mode-icon">🔥</span>
+          <span class="mode-name" id="lbl-m-medio">MEDIO</span>
+          <span class="mode-desc" id="lbl-m-medio-d">×15 + compresión</span>
+        </button>
+        <button class="mode-btn" id="btn-super" onclick="setMode('super')">
+          <span class="mode-icon">💀</span>
+          <span class="mode-name" id="lbl-m-super">SUPER LOUD</span>
+          <span class="mode-desc" id="lbl-m-super-d">×30 extremo</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Status -->
     <div id="status"></div>
-    
-    <button id="downloadBtn">DESCARGAR AUDIO POTENCIADO</button>
+
+    <!-- Button -->
+    <button id="downloadBtn" onclick="process()">
+      <span id="lbl-btn">▶ DESCARGAR AUDIO</span>
+    </button>
+
+    <div class="footer" id="lbl-footer">bypass4me · roblox audio tool</div>
+  </div>
 </div>
 
 <script>
-    const upload = document.getElementById('upload');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const status = document.getElementById('status');
-    let audioBuffer;
-
-    upload.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        status.innerText = "Cargando audio...";
-        const arrayBuffer = await file.arrayBuffer();
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
-        status.innerText = "¡Audio listo para potenciar!";
-        downloadBtn.style.display = "block";
-    };
-
-    downloadBtn.onclick = () => {
-        // Renderizamos a 2.5x de velocidad (más corto)
-        const offlineCtx = new OfflineAudioContext(
-            audioBuffer.numberOfChannels,
-            audioBuffer.length / 2.5,
-            audioBuffer.sampleRate
-        );
-
-        const source = offlineCtx.createBufferSource();
-        source.buffer = audioBuffer;
-        source.playbackRate.value = 2.5; // Aceleración
-
-        // --- NODO DE VOLUMEN (GAIN) ---
-        const gainNode = offlineCtx.createGain();
-        gainNode.gain.value = 2.5; // <--- AQUÍ SUBES EL VOLUMEN (2.5 es bastante alto)
-        
-        source.connect(gainNode);
-        gainNode.connect(offlineCtx.destination);
-        // ------------------------------
-
-        source.start();
-        status.innerText = "Procesando volumen y velocidad...";
-
-        offlineCtx.startRendering().then(renderedBuffer => {
-            const wavBlob = bufferToWave(renderedBuffer, renderedBuffer.length);
-            const url = URL.createObjectURL(wavBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = "audio_BOOST_2.5x.wav";
-            a.click();
-            status.innerText = "¡Descargado! Súbelo y usa Pitch 0.4";
-        });
-    };
-
-    function bufferToWave(abuffer, len) {
-        let numOfChan = abuffer.numberOfChannels, length = len * numOfChan * 2 + 44, buffer = new ArrayBuffer(length), view = new DataView(buffer), pos = 0;
-        function setUint16(d) { view.setUint16(pos, d, true); pos += 2; }
-        function setUint32(d) { view.setUint32(pos, d, true); pos += 4; }
-        setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
-        setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
-        setUint32(abuffer.sampleRate); setUint32(abuffer.sampleRate * 2 * numOfChan);
-        setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164); setUint32(length - pos - 4);
-        for (let i = 0; i < len; i++) {
-            for (let channel = 0; channel < numOfChan; channel++) {
-                let s = Math.max(-1, Math.min(1, abuffer.getChannelData(channel)[i]));
-                view.setInt16(pos, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-                pos += 2;
-            }
-        }
-        return new Blob([buffer], { type: "audio/wav" });
+  // ─── TRANSLATIONS ────────────────────────────────────────────────
+  const LANGS = {
+    es: {
+      pre: 'AUDIO BOOSTER',
+      sub: 'Acelera 2.5x y amplifica el volumen. Usa <b style="color:#cc0000">Pitch 0.4</b> en Roblox.',
+      upload: 'SELECCIONAR AUDIO',
+      loud: '⚡ MODO LOUD',
+      loudHint: 'Activar compresión y ganancia extra',
+      modeLabel: 'NIVEL DE LOUD',
+      mNormal: 'NORMAL', mNormalD: '×6 + compresión',
+      mMedio: 'MEDIO',  mMedioD: '×15 + compresión',
+      mSuper: 'SUPER LOUD', mSuperD: '×30 extremo',
+      btn: '▶ DESCARGAR AUDIO',
+      loading: 'Cargando audio...',
+      ready: '¡Audio listo!',
+      processing: 'Procesando...',
+      done: '¡Descargado! Usa Pitch 0.4',
+      footer: 'bypass4me · herramienta de audio roblox'
+    },
+    en: {
+      pre: 'AUDIO BOOSTER',
+      sub: 'Speed up 2.5x and amplify volume. Use <b style="color:#cc0000">Pitch 0.4</b> in Roblox.',
+      upload: 'SELECT AUDIO FILE',
+      loud: '⚡ LOUD MODE',
+      loudHint: 'Enable compression and extra gain',
+      modeLabel: 'LOUD LEVEL',
+      mNormal: 'NORMAL', mNormalD: '×6 + compression',
+      mMedio: 'MEDIUM',  mMedioD: '×15 + compression',
+      mSuper: 'SUPER LOUD', mSuperD: '×30 extreme',
+      btn: '▶ DOWNLOAD AUDIO',
+      loading: 'Loading audio...',
+      ready: 'Audio ready!',
+      processing: 'Processing...',
+      done: 'Downloaded! Use Pitch 0.4',
+      footer: 'bypass4me · roblox audio tool'
+    },
+    ru: {
+      pre: 'УСИЛИТЕЛЬ АУДИО',
+      sub: 'Ускорение 2.5x и усиление звука. Используй <b style="color:#cc0000">Pitch 0.4</b> в Roblox.',
+      upload: 'ВЫБРАТЬ АУДИО',
+      loud: '⚡ РЕЖИМ LOUD',
+      loudHint: 'Включить сжатие и усиление',
+      modeLabel: 'УРОВЕНЬ LOUD',
+      mNormal: 'НОРМА', mNormalD: '×6 + сжатие',
+      mMedio: 'СРЕДНИЙ', mMedioD: '×15 + сжатие',
+      mSuper: 'СУПЕР', mSuperD: '×30 экстрим',
+      btn: '▶ СКАЧАТЬ АУДИО',
+      loading: 'Загрузка...',
+      ready: 'Аудио готово!',
+      processing: 'Обработка...',
+      done: 'Скачано! Используй Pitch 0.4',
+      footer: 'bypass4me · инструмент аудио roblox'
     }
+  };
+
+  let currentLang = 'es';
+  let audioBuffer = null;
+  let loudOn = false;
+  let loudMode = 'normal'; // 'normal' | 'medio' | 'super'
+
+  function detectLang() {
+    const nav = navigator.language || navigator.userLanguage || '';
+    const l = nav.toLowerCase().slice(0, 2);
+    if (l === 'ru') return 'ru';
+    if (l === 'en') return 'en';
+    return 'es';
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    const t = LANGS[lang];
+    document.getElementById('lbl-pre').textContent = t.pre;
+    document.getElementById('lbl-sub').innerHTML = t.sub;
+    document.getElementById('lbl-upload').textContent = t.upload;
+    document.getElementById('lbl-loud').textContent = t.loud;
+    document.getElementById('lbl-loud-hint').textContent = t.loudHint;
+    document.getElementById('lbl-mode-label').textContent = t.modeLabel;
+    document.getElementById('lbl-m-normal').textContent = t.mNormal;
+    document.getElementById('lbl-m-normal-d').textContent = t.mNormalD;
+    document.getElementById('lbl-m-medio').textContent = t.mMedio;
+    document.getElementById('lbl-m-medio-d').textContent = t.mMedioD;
+    document.getElementById('lbl-m-super').textContent = t.mSuper;
+    document.getElementById('lbl-m-super-d').textContent = t.mSuperD;
+    document.getElementById('lbl-btn').textContent = t.btn;
+    document.getElementById('lbl-footer').textContent = t.footer;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.lang-btn').forEach(b => {
+      if (b.textContent === lang.toUpperCase()) b.classList.add('active');
+    });
+  }
+
+  function toggleLoud() {
+    loudOn = !loudOn;
+    document.getElementById('loudRow').classList.toggle('on', loudOn);
+    document.getElementById('modeSection').classList.toggle('hidden', !loudOn);
+  }
+
+  function setMode(mode) {
+    loudMode = mode;
+    ['normal','medio','super'].forEach(m => {
+      const btn = document.getElementById('btn-' + m);
+      btn.className = 'mode-btn' + (m === mode ? ' active-' + m : '');
+    });
+  }
+
+  // ─── UPLOAD ──────────────────────────────────────────────────────
+  document.getElementById('upload').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const t = LANGS[currentLang];
+    setStatus(t.loading, false);
+    const arrayBuffer = await file.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    setStatus(t.ready, true);
+    document.getElementById('uploadZone').classList.add('ready');
+    document.getElementById('lbl-upload').textContent = '✔ ' + file.name.slice(0, 28);
+    document.getElementById('downloadBtn').style.display = 'block';
+  };
+
+  // ─── PROCESS ─────────────────────────────────────────────────────
+  async function process() {
+    if (!audioBuffer) return;
+    const t = LANGS[currentLang];
+    setStatus(t.processing, false);
+
+    const offlineCtx = new OfflineAudioContext(
+      audioBuffer.numberOfChannels,
+      Math.ceil(audioBuffer.length / 2.5),
+      audioBuffer.sampleRate
+    );
+
+    const source = offlineCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.playbackRate.value = 2.5;
+
+    const gainNode = offlineCtx.createGain();
+    const compressor = offlineCtx.createDynamicsCompressor();
+
+    if (loudOn && loudMode === 'super') {
+      compressor.threshold.value = -50;
+      compressor.ratio.value = 20;
+      gainNode.gain.value = 30.0;
+    } else if (loudOn && loudMode === 'medio') {
+      compressor.threshold.value = -40;
+      compressor.ratio.value = 15;
+      gainNode.gain.value = 15.0;
+    } else if (loudOn && loudMode === 'normal') {
+      compressor.threshold.value = -20;
+      compressor.ratio.value = 6;
+      gainNode.gain.value = 6.0;
+    } else {
+      // Loud OFF — volumen x2 limpio
+      gainNode.gain.value = 2.0;
+    }
+
+    if (loudOn) {
+      source.connect(compressor);
+      compressor.connect(gainNode);
+    } else {
+      source.connect(gainNode);
+    }
+    gainNode.connect(offlineCtx.destination);
+    source.start();
+
+    const rendered = await offlineCtx.startRendering();
+    const blob = bufferToWave(rendered, rendered.length);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const modeTag = loudOn ? loudMode.toUpperCase() : 'BOOST';
+    a.download = `bypass4me_${modeTag}_2.5x.wav`;
+    a.click();
+    setStatus(t.done, true);
+  }
+
+  function setStatus(msg, ok) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = ok ? 'ok' : '';
+  }
+
+  // ─── WAV ENCODER ─────────────────────────────────────────────────
+  function bufferToWave(abuffer, len) {
+    const numChan = abuffer.numberOfChannels;
+    const length = len * numChan * 2 + 44;
+    const buffer = new ArrayBuffer(length);
+    const view = new DataView(buffer);
+    let pos = 0;
+    const u16 = d => { view.setUint16(pos, d, true); pos += 2; };
+    const u32 = d => { view.setUint32(pos, d, true); pos += 4; };
+    u32(0x46464952); u32(length - 8); u32(0x45564157);
+    u32(0x20746d66); u32(16); u16(1); u16(numChan);
+    u32(abuffer.sampleRate); u32(abuffer.sampleRate * 2 * numChan);
+    u16(numChan * 2); u16(16); u32(0x61746164); u32(length - pos - 4);
+    for (let i = 0; i < len; i++) {
+      for (let ch = 0; ch < numChan; ch++) {
+        const s = Math.max(-1, Math.min(1, abuffer.getChannelData(ch)[i]));
+        view.setInt16(pos, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        pos += 2;
+      }
+    }
+    return new Blob([buffer], { type: 'audio/wav' });
+  }
+
+  // ─── INIT ─────────────────────────────────────────────────────────
+  setLang(detectLang());
 </script>
 </body>
 </html>
